@@ -17,6 +17,7 @@ _RESPONSES = enum.Enum(
     'NO_CHORE_TRY_AGAIN',
     'NO_PARTY',
     'NO_BUSY',
+    'NO_ANNOYED',
 )
 
 
@@ -48,13 +49,25 @@ _MESSAGES = {
   ],
   _RESPONSES.NO_CHORE_TRY_AGAIN: [
     "I've got to finish vacuuming. But you've got a sweet trick %(host)s! "
-    "Hit me back later and let's see what I can finaegel.",
+    "Hit me back later and let's see what I can finagle.",
   ],
   _RESPONSES.NO_PARTY: [
     'I already said yes to %(old_host)s.',
+    "Arr %(host)s, I be already swillin' the bilgewaters with me mess mates.",
   ],
   _RESPONSES.NO_BUSY: [
     'Sorry, I already have plans.',
+    'I must regretfully decline your invite.',
+    "I'm on vacation, we'll have to try some other time.",
+    'What is this "party" you speak of, %(host)s? I detest such frivolity.',
+    "Voicemail for %(name)s. Leave a message and I'll get back to you when I "
+    "have finished whatever important thing I'm doing. Click. Hahaha sucker.",
+  ],
+  _RESPONSES.NO_ANNOYED: [
+    'Yo buzz of %(host)s.',
+    'Back it up a notch %(host)s.',
+    'Please just peace out.',
+    "No news is bad news for me, %(host)s. Still can't come.",
   ],
 }
 
@@ -91,17 +104,23 @@ class Date:
 
     if (filtered_history and
         filtered_history[-1].response == _RESPONSES.NO_CHORE_TRY_AGAIN and
-        filtered_history[-1].host_name == host_name and
-        random.random() < 0.9):
+        random.random() < (0.5 if self.host else 0.9)):
       response = _RESPONSES.YES_CALLBACK
       is_coming = True
-    elif random.getrandbits(1) == 0:
-      response = random.choice([
-          _RESPONSES.NO_CHORE,
-          _RESPONSES.NO_CHORE_TRY_AGAIN,
-          _RESPONSES.NO_BUSY])
+    elif (filtered_history and not filtered_history[-1].is_coming and
+          random.random() < 0.8):
+      response = _RESPONSES.NO_ANNOYED
+      is_coming = False
+    elif random.random() < 0.6:
+      excuses = [_RESPONSES.NO_BUSY]
+      if not self.host:
+        excuses += [_RESPONSES.NO_CHORE, _RESPONSES.NO_CHORE_TRY_AGAIN]
+      response = random.choice(excuses)
       is_coming = False
     elif self.host:
+      if self.host.GetName() == host_name:
+        response = _RESPONSES.NO_ANNOYED
+        is_coming = False
       if random.random() < 0.3:
         if random.getrandbits(1) == 0:
           response = _RESPONSES.YES_SWITCH
@@ -109,15 +128,15 @@ class Date:
         else:
           response = _RESPONSES.YES_SWITCH_FRIEND
           is_coming = True
-          friend = self._PickFriend(dates)
+          friend = self._PickFriend(dates, host_name)
       else:
         response = _RESPONSES.NO_PARTY
         is_coming = False
     else:
-      if random.random() < 0.05:
+      if random.random() < 0.2:
         response = _RESPONSES.YES_FRIEND
         is_coming = True
-        friend = self._PickFriend(dates)
+        friend = self._PickFriend(dates, host_name)
       else:
         response = _RESPONSES.YES
         is_coming = True
@@ -131,12 +150,12 @@ class Date:
       quiet)
     return is_coming, friend
 
-  def _PickFriend(self, dates):
+  def _PickFriend(self, dates, host_name):
     steals = []
     excuses = []
     untapped = []
     for date in dates:
-      if date is self:
+      if date is self or (date.host and date.host.GetName() == host_name):
         continue
       if date.host:
         steals.append(date)
@@ -152,7 +171,8 @@ class Date:
     elif untapped:
       return random.choice(untapped)
     else:
-      return random.choice(steals + excuses + untapped)
+      everyone = steals + excuses + untapped
+      return random.choice(everyone) if everyone else None
 
   def _Say(self, msg, as_parent, quiet):
     speaker = self._parent if as_parent else self._name
