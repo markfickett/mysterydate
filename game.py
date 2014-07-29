@@ -20,7 +20,27 @@ class Player:
 
 
 def GetPlayers():
-  return [hosts.Host(name) for name in ['Kelsey', 'Billy', 'Coco', 'Mark']]
+  logging.info("Who are the hotties?")
+  names = set()
+  while True:
+    name = raw_input('Enter your name (blank if we have everyone): ').strip()
+    if name:
+      if name in names:
+        logging.info('Come on, %s is already playing.', name)
+      else:
+        logging.info('%s is in!', name)
+        names.add(name)
+    if not name:
+      if names:
+        logging.info({
+          3: "Three's a party!",
+          2: "Two's company.",
+          1: 'I really hope you win!',
+        }.get(len(names), 'Yeehaw!'))
+        break
+      else:
+        logging.info("You can't play like this.")
+  return [hosts.Host(name) for name in names]
 
 
 def PrintDateChoices(dates):
@@ -63,9 +83,12 @@ def PlayUntilWin(players, dates):
 
 if __name__ == '__main__':
   dates = dates.MakeDates()
-  players = GetPlayers()
   try:
+    players = GetPlayers()
     winner = PlayUntilWin(players, dates)
-    logging.info('%s wins!', winner.GetName())
+    if len(players) > 1:
+      logging.info('%s wins!', winner.GetName())
+    else:
+      logging.info('I think we knew %s was going to win.', winner.GetName())
   except (KeyboardInterrupt, EOFError):
     logging.info('Time to go.')
