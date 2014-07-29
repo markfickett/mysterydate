@@ -65,8 +65,7 @@ def PlayUntilWin(players, dates):
       _PrintDateChoices(dates)
       date = _QueryDate(dates, player)
       logging.info('%s is calling %s...', player.GetName(), date.GetName())
-      is_coming, friend = date.GetAndSayAnswer(
-          player.GetName(), dates, quiet=_QUIET)
+      is_coming, friend = date.GetAndSayAnswer(player, dates, quiet=_QUIET)
       player.Rsvp(date, is_coming)
       if friend:
         player.Rsvp(friend, True)
@@ -77,6 +76,8 @@ def PlayUntilWin(players, dates):
 
 if __name__ == '__main__':
   dates = dates.MakeDates()
+  for date in dates:
+    date.AddEnemies(dates)
   try:
     players = _GetPlayers()
     winner = PlayUntilWin(players, dates)

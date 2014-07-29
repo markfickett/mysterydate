@@ -18,6 +18,7 @@ _RESPONSES = enum.Enum(
     'NO_PARTY',
     'NO_BUSY',
     'NO_ANNOYED',
+    'NO_ENEMY',
 )
 
 
@@ -87,6 +88,9 @@ _MESSAGES = {
     'Please just peace out.',
     "No news is bad news for me, %(host)s. Still can't come.",
   ],
+  _RESPONSES.NO_ENEMY: [
+    'No way am I going to a party with %(enemy)s!',
+  ],
 }
 
 
@@ -101,26 +105,39 @@ class Date:
     self.host = None  # accessed by Host for RSVPing
     self._call_history = []
     self._parent = voice.GetRandomVoice(exclude=self._name)
+    self._enemies = set()
 
   def GetName(self):
     return self._name
 
-  def GetAndSayAnswer(self, host_name, dates, quiet=False):
+  def AddEnemies(self, dates):
+    if random.random() < 0.1:
+      self._enemies.update(random.sample(
+          [d for d in dates if d is not self],
+          random.randint(2, 8)))
+
+  def GetAndSayAnswer(self, host, dates, quiet=False):
     details = {
       'name': self._name,
-      'host': host_name,
+      'host': host.GetName(),
     }
     if self.host:
       details['old_host'] = self.host.GetName()
     filtered_history = [
         c for c in self._call_history
-        if c.host_name == host_name]
+        if c.host_name == host.GetName()]
 
     response = None
     friend = None
     is_coming = False
+    enemies = host.CheckGuests(self._enemies)
+    enemy = random.choice(list(enemies)) if enemies else None
 
-    if (filtered_history and
+    if enemy:
+      response = _RESPONSES.NO_ENEMY
+      is_coming = False
+      details['enemy'] = enemy.GetName()
+    elif (filtered_history and
         filtered_history[-1].response == _RESPONSES.NO_CHORE_TRY_AGAIN and
         random.random() < (0.5 if self.host else 0.9)):
       response = _RESPONSES.YES_CALLBACK
@@ -136,7 +153,7 @@ class Date:
       response = random.choice(excuses)
       is_coming = False
     elif self.host:
-      if self.host.GetName() == host_name:
+      if self.host.GetName() == host.GetName():
         response = _RESPONSES.NO_ANNOYED
         is_coming = False
       if random.random() < 0.3:
@@ -146,7 +163,7 @@ class Date:
         else:
           response = _RESPONSES.YES_SWITCH_FRIEND
           is_coming = True
-          friend = self._PickFriend(dates, host_name)
+          friend = self._PickFriend(dates, host.GetName())
       else:
         response = _RESPONSES.NO_PARTY
         is_coming = False
@@ -154,14 +171,14 @@ class Date:
       if random.random() < 0.2:
         response = _RESPONSES.YES_FRIEND
         is_coming = True
-        friend = self._PickFriend(dates, host_name)
+        friend = self._PickFriend(dates, host.GetName())
       else:
         response = _RESPONSES.YES
         is_coming = True
 
     if friend:
       details['friend'] = friend.GetName()
-    self._call_history.append(_CallRecord(is_coming, response, host_name))
+    self._call_history.append(_CallRecord(is_coming, response, host.GetName()))
     self._Say(
       random.choice(_MESSAGES[response]) % details,
       response is _RESPONSES.NO_CHORE,
@@ -173,7 +190,9 @@ class Date:
     excuses = []
     untapped = []
     for date in dates:
-      if date is self or (date.host and date.host.GetName() == host_name):
+      if (date is self or
+          (date.host and date.host.GetName() == host_name) or
+          date in self._enemies):
         continue
       if date.host:
         steals.append(date)

@@ -19,3 +19,6 @@ class Host:
       if date in self._dates:
         self._dates.remove(date)
         date.host = None
+
+  def CheckGuests(self, check_set):
+    return self._dates.intersection(check_set)
