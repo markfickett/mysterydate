@@ -43,6 +43,7 @@ _MESSAGES = {
   _RESPONSES.YES_SWITCH: [
     "I already said yes to %(old_host)s, but your crib is hipper. "
     "I'll see you soon, %(host)s!",
+    'Unfortunately I already told %(old_host)s I... am coming to your party!',
   ],
   _RESPONSES.YES_SWITCH_FRIEND: [
     "I had some plans. But %(old_host)s will have to chop some onions because "
@@ -50,16 +51,19 @@ _MESSAGES = {
   ],
   _RESPONSES.YES_CALLBACK: [
     "Thanks for the call back %(host)s, I'll totally be there!",
+    "Oh hey %(host)s, yeah, I've cleared my calendar.",
   ],
   _RESPONSES.NO_CHORE: [
-    '%(name)s has to vacuum.',
-    "%(name)s has to braid the dog's hair.",
-    "%(name)s has to fill the cistern on Saturday nights.",
-    "%(name)s has to learn to fold a towel before learning to make the sushi.",
-    "%(name)s has to tie-dye my underpants.",
-    "%(name)s has to massage the hamburger for three hours.",
-    "%(name)s has to bathe in milk.",
-    "%(name)s has to count the drug mo... I mean vacuum.",
+    '%(name)s has to ' + excuse for excuse in [
+        'vacuum.',
+        "braid the dog's hair.",
+        "fill the cistern on Saturday nights.",
+        "learn to fold a towel before learning to make the sushi.",
+        "tie-dye my underpants.",
+        "massage the hamburger for three hours.",
+        "bathe in milk.",
+        "count the drug mo... I mean vacuum.",
+    ]
   ],
   _RESPONSES.NO_CHORE_TRY_AGAIN: [
     "I've got to finish vacuuming. But you've got a sweet trick %(host)s! "
