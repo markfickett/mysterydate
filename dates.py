@@ -32,6 +32,12 @@ _MESSAGES = {
   _RESPONSES.YES_FRIEND: [
     "Why yes %(host)s, I would love to not only come, but jam with my BFF "
     "%(friend)s.",
+    "Hellz yeah mofo. And I'm bringing my bitch %(friend)s!",
+    'Indubitably! Mayhaps I shalt convey my esteeemed associate %(friend)s to '
+    'accompany me to yonder festivus.',
+    "I've been looking for a way to get %(friend)s in bed with me. Finally "
+    "an opportunity. We'll be there.",
+    'Yes, but only if I can bring my conjoined twin %(friend)s.',
   ],
   _RESPONSES.YES_SWITCH: [
     "I already said yes to %(old_host)s, but your crib is hipper. "
@@ -46,10 +52,22 @@ _MESSAGES = {
   ],
   _RESPONSES.NO_CHORE: [
     '%(name)s has to vacuum.',
+    "%(name)s has to braid the dog's hair.",
+    "%(name)s has to fill the cistern on Saturday nights.",
+    "%(name)s has to learn to fold a towel before learning to make the sushi.",
+    "%(name)s has to tie-dye my underpants.",
+    "%(name)s has to massage the hamburger for three hours.",
+    "%(name)s has to bathe in milk.",
+    "%(name)s has to count the drug mo... I mean vacuum.",
   ],
   _RESPONSES.NO_CHORE_TRY_AGAIN: [
     "I've got to finish vacuuming. But you've got a sweet trick %(host)s! "
     "Hit me back later and let's see what I can finagle.",
+    "I've got to finish alphabetizing my neckties. Please call back later.",
+    "I've got to finish preserving the sheep's eyes in formaldehyde. Hit me "
+    "back in a few.",
+    "Bees, bees, everywhere! Call the doctor! Then call me back.",
+    "This horse won't shoe itself. Um. Holla' back in a few hours.",
   ],
   _RESPONSES.NO_PARTY: [
     'I already said yes to %(old_host)s.',
