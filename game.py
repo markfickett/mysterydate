@@ -1,4 +1,5 @@
 import logging
+import random
 
 import dates
 import hosts
@@ -34,7 +35,9 @@ def _GetPlayers():
         break
       else:
         logging.info("You can't play like this.")
-  return [hosts.Host(name) for name in names]
+  players = [hosts.Host(name) for name in names]
+  random.shuffle(players)
+  return players
 
 
 def _PrintDateChoices(dates):
