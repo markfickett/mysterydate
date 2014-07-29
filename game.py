@@ -51,8 +51,11 @@ def PlayUntilWin(players, dates):
       PrintDateChoices(dates)
       date = QueryDate(dates, player)
       logging.info('%s is calling %s...', player.GetName(), date.GetName())
-      is_coming = date.GetAndSayAnswer(player.GetName(), quiet=QUIET)
+      is_coming, friend = date.GetAndSayAnswer(
+          player.GetName(), dates, quiet=QUIET)
       player.Rsvp(date, is_coming)
+      if friend:
+        player.Rsvp(friend, True)
       SummarizePlayerStandings(players)
       if player.GetNumDates() >= NUM_TO_WIN:
         return player
@@ -64,5 +67,5 @@ if __name__ == '__main__':
   try:
     winner = PlayUntilWin(players, dates)
     logging.info('%s wins!', winner.GetName())
-  except KeyboardInterrupt:
+  except (KeyboardInterrupt, EOFError):
     logging.info('Time to go.')
