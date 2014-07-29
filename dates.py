@@ -23,6 +23,10 @@ _RESPONSES = enum.Enum(
 _MESSAGES = {
   _RESPONSES.YES: [
     'Why yes %(host)s, I would love to come to your classy soirree.',
+    'Awesome dude. Catch you on the flip side.',
+    'Sure. Cool. Yeah.',
+    "Hey %(host)s. What's that? Game night? Count me in!",
+    "I sure could use a night on the town. Let's go %(host)s!",
   ],
   _RESPONSES.YES_FRIEND: [
     "Why yes %(host)s, I would love to not only come, but jam with my BFF "
@@ -152,8 +156,9 @@ class Date:
 
   def _Say(self, msg, as_parent, quiet):
     speaker = self._parent if as_parent else self._name
-    logging.info('%s: %s', speaker, msg)
-    if not quiet:
+    if quiet:
+      logging.info('%s: %s', speaker, msg)
+    else:
       voice.Say(msg, voice=speaker)
 
   def __str__(self):
