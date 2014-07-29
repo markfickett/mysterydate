@@ -130,7 +130,7 @@ class Date:
     response = None
     friend = None
     is_coming = False
-    enemies = host.CheckGuests(self._enemies)
+    enemies = host.CheckDates(self._enemies)
     enemy = random.choice(list(enemies)) if enemies else None
 
     if enemy:

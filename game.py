@@ -47,7 +47,10 @@ def _PrintDateChoices(dates):
 def _SummarizePlayerStandings(players):
   logging.info(
       'How are the parties doing?\n' +
-      ''.join(['\t%d\t%s\n' % (p.GetNumDates(), p.GetName()) for p in players]))
+      ''.join(['\t%s\t%d\t%s\n' % (
+          p.GetName(),
+          p.GetNumDates(),
+          ', '.join(p.GetDateNames())) for p in players]))
 
 
 def _QueryDate(dates, player):
