@@ -1,26 +1,20 @@
+import logging
+
 import dates
 import hosts
-import logging
+
+
 logging.basicConfig(
     format='%(levelname)s %(asctime)s %(filename)s:%(lineno)s: %(message)s',
     level=logging.INFO)
 
 
-NUM_TO_WIN = 6
-QUIET = True
+_NUM_TO_WIN = 6
+_QUIET = True
 
 
-class Player:
-  def __init__(self, name):
-    self.name = name
-    self.dates = set()
-
-  def GetName(self):
-    return self.name
-
-
-def GetPlayers():
-  logging.info("Who are the hotties?")
+def _GetPlayers():
+  logging.info("Who are you hotties?")
   names = set()
   while True:
     name = raw_input('Enter your name (blank if we have everyone): ').strip()
@@ -43,20 +37,20 @@ def GetPlayers():
   return [hosts.Host(name) for name in names]
 
 
-def PrintDateChoices(dates):
+def _PrintDateChoices(dates):
   msg = "Potential dates are:\n"
   for i, date in enumerate(dates):
     msg += '\t%d\t%s\n' % (i, date)
   logging.info(msg)
 
 
-def SummarizePlayerStandings(players):
+def _SummarizePlayerStandings(players):
   logging.info(
       'How are the parties doing?\n' +
       ''.join(['\t%d\t%s\n' % (p.GetNumDates(), p.GetName()) for p in players]))
 
 
-def QueryDate(dates, player):
+def _QueryDate(dates, player):
   while True:
     s = raw_input("Who you gonna' call, %s? " % player.GetName())
     try:
@@ -68,23 +62,23 @@ def QueryDate(dates, player):
 def PlayUntilWin(players, dates):
   while True:
     for player in players:
-      PrintDateChoices(dates)
-      date = QueryDate(dates, player)
+      _PrintDateChoices(dates)
+      date = _QueryDate(dates, player)
       logging.info('%s is calling %s...', player.GetName(), date.GetName())
       is_coming, friend = date.GetAndSayAnswer(
-          player.GetName(), dates, quiet=QUIET)
+          player.GetName(), dates, quiet=_QUIET)
       player.Rsvp(date, is_coming)
       if friend:
         player.Rsvp(friend, True)
-      SummarizePlayerStandings(players)
-      if player.GetNumDates() >= NUM_TO_WIN:
+      _SummarizePlayerStandings(players)
+      if player.GetNumDates() >= _NUM_TO_WIN:
         return player
 
 
 if __name__ == '__main__':
   dates = dates.MakeDates()
   try:
-    players = GetPlayers()
+    players = _GetPlayers()
     winner = PlayUntilWin(players, dates)
     if len(players) > 1:
       logging.info('%s wins!', winner.GetName())

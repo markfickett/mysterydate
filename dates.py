@@ -1,7 +1,9 @@
 import collections
-import enum
 import logging
 import random
+
+import enum
+
 import voice
 
 
@@ -60,22 +62,23 @@ _CallRecord = collections.namedtuple(
 
 class Date:
   def __init__(self, name):
-    self.name = name
-    self.host = None
-    self.call_history = []
+    self._name = name
+    self.host = None  # accessed by Host for RSVPing
+    self._call_history = []
+    self._parent = voice.GetRandomVoice(exclude=self._name)
 
   def GetName(self):
-    return self.name
+    return self._name
 
   def GetAndSayAnswer(self, host_name, dates, quiet=False):
     details = {
-      'name': self.name,
+      'name': self._name,
       'host': host_name,
     }
     if self.host:
       details['old_host'] = self.host.GetName()
     filtered_history = [
-        c for c in self.call_history
+        c for c in self._call_history
         if c.host_name == host_name]
 
     response = None
@@ -117,8 +120,11 @@ class Date:
 
     if friend:
       details['friend'] = friend.GetName()
-    self.call_history.append(_CallRecord(is_coming, response, host_name))
-    self._Say(random.choice(_MESSAGES[response]) % details, quiet)
+    self._call_history.append(_CallRecord(is_coming, response, host_name))
+    self._Say(
+      random.choice(_MESSAGES[response]) % details,
+      response is _RESPONSES.NO_CHORE,
+      quiet)
     return is_coming, friend
 
   def _PickFriend(self, dates):
@@ -130,7 +136,7 @@ class Date:
         continue
       if date.host:
         steals.append(date)
-      elif date.call_history:
+      elif date._call_history:
         excuses.append(date)
       else:
         untapped.append(date)
@@ -144,17 +150,18 @@ class Date:
     else:
       return random.choice(steals + excuses + untapped)
 
-  def _Say(self, msg, quiet):
+  def _Say(self, msg, as_parent, quiet):
+    voice = self._parent if as_parent else self._name
     if quiet:
-      logging.info('%s: %s', self.name, msg)
+      logging.info('%s: %s', voice, msg)
     else:
-      voice.Say(msg, voice=self.name)
+      voice.Say(msg, voice=voice)
 
   def __str__(self):
-    if not self.call_history:
+    if not self._call_history:
       return '?'
     return '%s%s' % (
-        self.name,
+        self._name,
         (' partying with %s' % self.host.GetName()) if self.host else '')
 
 

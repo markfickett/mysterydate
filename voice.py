@@ -8,8 +8,11 @@ VOICES = [line.split()[0] for line in __output.split('\n') if line]
 VOICES_SET = frozenset(VOICES)
 
 
-def GetRandomVoice():
-  return random.choice(VOICES)
+def GetRandomVoice(exclude=None):
+  if exclude:
+    return random.choice(list(VOICES_SET - set((exclude,))))
+  else:
+    return random.choice(VOICES)
 
 
 DEFAULT_VOICE = GetRandomVoice()
