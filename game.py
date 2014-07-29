@@ -10,7 +10,7 @@ logging.basicConfig(
 
 
 _NUM_TO_WIN = 6
-_QUIET = True
+_QUIET = False
 
 
 def _GetPlayers():

@@ -151,11 +151,10 @@ class Date:
       return random.choice(steals + excuses + untapped)
 
   def _Say(self, msg, as_parent, quiet):
-    voice = self._parent if as_parent else self._name
-    if quiet:
-      logging.info('%s: %s', voice, msg)
-    else:
-      voice.Say(msg, voice=voice)
+    speaker = self._parent if as_parent else self._name
+    logging.info('%s: %s', speaker, msg)
+    if not quiet:
+      voice.Say(msg, voice=speaker)
 
   def __str__(self):
     if not self._call_history:
