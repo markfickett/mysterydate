@@ -14,7 +14,7 @@ _NUM_TO_WIN = 6
 _QUIET = False
 
 
-def _GetPlayers():
+def GetPlayers():
   logging.info("Who are you hotties?")
   names = set()
   while True:
@@ -40,9 +40,9 @@ def _GetPlayers():
   return players
 
 
-def _PrintDateChoices(dates):
+def _PrintDateChoices(potential_dates):
   msg = "Potential dates are:\n"
-  for i, date in enumerate(dates):
+  for i, date in enumerate(potential_dates):
     msg += '\t%d\t%s\n' % (i, date)
   logging.info(msg)
 
@@ -56,22 +56,23 @@ def _SummarizePlayerStandings(players):
           ', '.join(p.GetDateNames())) for p in players]))
 
 
-def _QueryDate(dates, player):
+def _QueryDate(potential_dates, player):
   while True:
     s = raw_input("Who you gonna' call, %s? " % player.GetName())
     try:
-      return dates[int(s)]
+      return potential_dates[int(s)]
     except (ValueError, IndexError):
       logging.warning('Picking %r is not an option.', s)
 
 
-def PlayUntilWin(players, dates):
+def PlayUntilWin(players, potential_dates):
   while True:
     for player in players:
-      _PrintDateChoices(dates)
-      date = _QueryDate(dates, player)
+      _PrintDateChoices(potential_dates)
+      date = _QueryDate(potential_dates, player)
       logging.info('%s is calling %s...', player.GetName(), date.GetName())
-      is_coming, friend = date.GetAndSayAnswer(player, dates, quiet=_QUIET)
+      is_coming, friend = date.GetAndSayAnswer(
+          player, potential_dates, quiet=_QUIET)
       player.Rsvp(date, is_coming)
       if friend:
         player.Rsvp(friend, True)
@@ -80,16 +81,12 @@ def PlayUntilWin(players, dates):
         return player
 
 
-if __name__ == '__main__':
-  dates = dates.MakeDates()
-  for date in dates:
-    date.AddEnemies(dates)
-  try:
-    players = _GetPlayers()
-    winner = PlayUntilWin(players, dates)
-    if len(players) > 1:
-      logging.info('%s wins!', winner.GetName())
-    else:
-      logging.info('I think we knew %s was going to win.', winner.GetName())
-  except (KeyboardInterrupt, EOFError):
-    logging.info('Time to go.')
+def RunGame(players):
+  potential_dates = dates.MakeDates()
+  for date in potential_dates:
+    date.AddEnemies(potential_dates)
+  winner = PlayUntilWin(players, potential_dates)
+  if len(players) > 1:
+    logging.info('%s wins!', winner.GetName())
+  else:
+    logging.info('I think we knew %s was going to win.', winner.GetName())
