@@ -28,8 +28,6 @@ _RESPONSES = enum.Enum(
 #     Cellos
 #     Good News
 #     Pipe Organ
-# and for the otherwise slow voices:
-#     Hysterical
 _MESSAGES = {
   _RESPONSES.YES: [
     'Why yes %(host)s, I would love to come to your classy soirree.',
@@ -192,10 +190,13 @@ class Date:
       details['friend'] = friend.GetName()
     self._call_history.append(_CallRecord(is_coming, response, host.GetName()))
     self._Say(
-      random.choice(_MESSAGES[response]) % details,
+      self._GetMessageTemplate(response) % details,
       response is _RESPONSES.NO_CHORE,
       quiet)
     return is_coming, friend
+
+  def _GetMessageTemplate(self, response):
+    return random.choice(_MESSAGES[response])
 
   def _PickFriend(self, dates, host_name):
     steals = []
@@ -238,7 +239,50 @@ class Date:
         (' partying with %s' % self.host.GetName()) if self.host else '')
 
 
+class _CustomMessageDate(Date):
+
+  def __init__(self, voice_name, message_overrides, **kwargs):
+    Date.__init__(self, voice_name, **kwargs)
+    self._messages = message_overrides
+
+  def _GetMessageTemplate(self, response):
+    return random.choice(self._messages.get(response, _MESSAGES[response]))
+
+
+_HYSTERICAL_MESSAGES = {
+  _RESPONSES.YES : [
+      'I love to laugh!',
+      'The more I laugh, the more I fill with glee!'],
+  _RESPONSES.YES_FRIEND : [
+      'The more the glee, the more %(friend)s and I are a merrier we!'],
+  _RESPONSES.NO_CHORE : [
+      '%(name)s is learning to twitter like a bird.',
+      'Can you believe %(name)s is hissing and fizzing like a snake?'],
+  _RESPONSES.NO_CHORE_TRY_AGAIN : [
+      "Then there's the kind what can't make up their mind.",
+      "I've got to let go with a ho ho ho."],
+  _RESPONSES.NO_PARTY : ["We're a merrier we!"],
+  _RESPONSES.NO_BUSY : ["I can't hide it inside."],
+  _RESPONSES.NO_ANNOYED : [
+      "It's getting worse every year.",
+      "It's embarrassing!"],
+  _RESPONSES.NO_ENEMY : ['%(enemy)s laughs through their teeth goodness sake.'],
+}
+_HYSTERICAL_MESSAGES[_RESPONSES.YES_CALLBACK] = _HYSTERICAL_MESSAGES[
+    _RESPONSES.YES]
+_HYSTERICAL_MESSAGES[_RESPONSES.YES_SWITCH] = _HYSTERICAL_MESSAGES[
+    _RESPONSES.YES]
+_HYSTERICAL_MESSAGES[_RESPONSES.YES_SWITCH_FRIEND] = _HYSTERICAL_MESSAGES[
+    _RESPONSES.YES_FRIEND]
+
+
 def MakeDates(**kwargs):
-  dates = [Date(v, **kwargs) for v in voice.VOICES]
+  dates = []
+  custom_voices = set()
+  for voice_name, overrides in (
+      ('Hysterical', _HYSTERICAL_MESSAGES),):
+    dates.append(_CustomMessageDate(voice_name, overrides))
+    custom_voices.add(voice_name)
+  dates += [Date(v, **kwargs) for v in (voice.VOICES_SET - custom_voices)]
   random.shuffle(dates)
   return dates
