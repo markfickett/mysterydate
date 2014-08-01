@@ -82,6 +82,8 @@ def PlayUntilWin(players, potential_dates):
 
 
 def RunGame(players):
+  for player in players:
+    player.ClearDates()
   potential_dates = dates.MakeDates()
   for date in potential_dates:
     date.AddEnemies(potential_dates)

@@ -1,13 +1,16 @@
 class Host:
   def __init__(self, name):
     self._name = name
-    self._dates = set()
+    self.ClearDates()
 
   def GetName(self):
     return self._name
 
   def GetNumDates(self):
     return len(self._dates)
+
+  def ClearDates(self):
+    self._dates = set()
 
   def Rsvp(self, date, is_coming):
     if is_coming:
