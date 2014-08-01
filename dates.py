@@ -22,6 +22,14 @@ _RESPONSES = enum.Enum(
 )
 
 
+# TODO: Custom messages for the singing voices:
+#     Bad News
+#     Bells
+#     Cellos
+#     Good News
+#     Pipe Organ
+# and for the otherwise slow voices:
+#     Hysterical
 _MESSAGES = {
   _RESPONSES.YES: [
     'Why yes %(host)s, I would love to come to your classy soirree.',
