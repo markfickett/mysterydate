@@ -250,23 +250,22 @@ class _CustomMessageDate(Date):
 
 
 _HYSTERICAL_MESSAGES = {
-  _RESPONSES.YES : [
-      'I love to laugh!',
-      'The more I laugh, the more I fill with glee!'],
+  _RESPONSES.YES : ['Yes!', 'Great.', 'OK.'],
   _RESPONSES.YES_FRIEND : [
-      'The more the glee, the more %(friend)s and I are a merrier we!'],
+      "Super. I'll bring %(friend)s.",
+      "Sweet. I'll bring %(friend)s."],
   _RESPONSES.NO_CHORE : [
       '%(name)s is learning to twitter like a bird.',
       'Can you believe %(name)s is hissing and fizzing like a snake?'],
   _RESPONSES.NO_CHORE_TRY_AGAIN : [
-      "Then there's the kind what can't make up their mind.",
-      "I've got to let go with a ho ho ho."],
-  _RESPONSES.NO_PARTY : ["We're a merrier we!"],
-  _RESPONSES.NO_BUSY : ["I can't hide it inside."],
+      "I can't. Call me back.",
+      'Not now. Try tomorrow.'],
+  _RESPONSES.NO_PARTY : ['No. %(old_host)s called first.'],
+  _RESPONSES.NO_BUSY : ["I can't."],
   _RESPONSES.NO_ANNOYED : [
-      "It's getting worse every year.",
-      "It's embarrassing!"],
-  _RESPONSES.NO_ENEMY : ['%(enemy)s laughs through their teeth goodness sake.'],
+      "I told you I can't.",
+      "%(host)s you know I can't."],
+  _RESPONSES.NO_ENEMY : ['Not with %(enemy)s.'],
 }
 _HYSTERICAL_MESSAGES[_RESPONSES.YES_CALLBACK] = _HYSTERICAL_MESSAGES[
     _RESPONSES.YES]
