@@ -7,6 +7,9 @@ import enum
 import voice
 
 
+_DEBUG = False
+
+
 _RESPONSES = enum.Enum(
     'YES',
     'YES_FRIEND',
@@ -227,10 +230,12 @@ class Date:
 
   def __str__(self):
     if not self._call_history:
-      #return '?'
-      return '(%s%s)' % (
-          self._name,
-          (' %d enemies' % len(self._enemies)) if self._enemies else '')
+      if _DEBUG:
+        return '(%s%s)' % (
+            self._name,
+            (' %d enemies' % len(self._enemies)) if self._enemies else '')
+      else:
+        return '?'
     return '%s%s' % (
         self._name,
         (' partying with %s' % self.host.GetName()) if self.host else '')
@@ -305,19 +310,35 @@ _GOOD_NEWS_MESSAGES = {
 }
 
 
-# TODO: Custom messages for the singing voices:
-#     Bad News
-#     Bells
-#     Cellos
-#     Pipe Organ
+_BELLS_MESSAGES = {
+  _RESPONSES.YES: ('See you.', 'See you %(host)s.', '%(host)s. Thank you.'),
+  _RESPONSES.YES_FRIEND: ('Great for me and %(friend)s.',),
+  _RESPONSES.YES_CALLBACK: ('You came through %(host)s. See you later.',),
+  _RESPONSES.YES_SWITCH: (
+      'I had plans but they are changing.',
+      "You're an ace. So you trump. %(old_host)s."),
+  _RESPONSES.YES_SWITCH_FRIEND: (
+      '%(friend)s convinced me. We will come to you.',),
+  _RESPONSES.NO_CHORE_TRY_AGAIN: ('Later on I will know more.',),
+  _RESPONSES.NO_PARTY: ('Got a call from %(old_host)s first.',),
+  _RESPONSES.NO_BUSY: ('I am busy sad to say.', 'All. The. Chores.'),
+  _RESPONSES.NO_ANNOYED: (
+      'La la la. La la la.',
+      'Nothing gets my goat like phone calls.'),
+  _RESPONSES.NO_ENEMY: ('I will catch my death from %(enemy)s.',),
+}
 
 
 def MakeDates(**kwargs):
   dates = []
   custom_voices = set()
   for voice_name, overrides in (
+      # TODO: Custom messages for Bad News.
       ('Hysterical', _HYSTERICAL_MESSAGES),
-      ('Good News', _GOOD_NEWS_MESSAGES)):
+      ('Cellos', _GOOD_NEWS_MESSAGES),  # TODO: Custom messages for Cellos.
+      ('Pipe Organ', _GOOD_NEWS_MESSAGES),  # TODO: Custom messages for P.O.
+      ('Good News', _GOOD_NEWS_MESSAGES),
+      ('Bells', _BELLS_MESSAGES)):
     if voice_name in voice.VOICES_SET:
       dates.append(_CustomMessageDate(voice_name, overrides))
       custom_voices.add(voice_name)
