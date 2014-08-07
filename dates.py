@@ -22,21 +22,15 @@ _RESPONSES = enum.Enum(
 )
 
 
-# TODO: Custom messages for the singing voices:
-#     Bad News
-#     Bells
-#     Cellos
-#     Good News
-#     Pipe Organ
 _MESSAGES = {
-  _RESPONSES.YES: [
+  _RESPONSES.YES: (
     'Why yes %(host)s, I would love to come to your classy soirree.',
     'Awesome dude. Catch you on the flip side.',
     'Sure. Cool. Yeah.',
     "Hey %(host)s. What's that? Game night? Count me in!",
     "I sure could use a night on the town. Let's go %(host)s!",
-  ],
-  _RESPONSES.YES_FRIEND: [
+  ),
+  _RESPONSES.YES_FRIEND: (
     "Why yes %(host)s, I would love to not only come, but jam with my BFF "
     "%(friend)s.",
     "Hellz yeah mofo. And I'm bringing my bitch %(friend)s!",
@@ -45,22 +39,22 @@ _MESSAGES = {
     "I've been looking for a way to get %(friend)s in bed with me. Finally "
     "an opportunity. We'll be there.",
     'Yes, but only if I can bring my conjoined twin %(friend)s.',
-  ],
-  _RESPONSES.YES_SWITCH: [
+  ),
+  _RESPONSES.YES_SWITCH: (
     "I already said yes to %(old_host)s, but your crib is hipper. "
     "I'll see you soon, %(host)s!",
     'Unfortunately I already told %(old_host)s I... am coming to your party!',
-  ],
-  _RESPONSES.YES_SWITCH_FRIEND: [
+  ),
+  _RESPONSES.YES_SWITCH_FRIEND: (
     "I had some plans. But %(old_host)s will have to chop some onions because "
     "%(friend)s and I have a new boat to float, and it's yours!",
-  ],
-  _RESPONSES.YES_CALLBACK: [
+  ),
+  _RESPONSES.YES_CALLBACK: (
     "Thanks for the call back %(host)s, I'll totally be there!",
     "Oh hey %(host)s, yeah, I've cleared my calendar.",
-  ],
+  ),
   _RESPONSES.NO_CHORE: [
-    '%(name)s has to ' + excuse for excuse in [
+    '%(name)s has to ' + excuse for excuse in (
         'vacuum.',
         "braid the dog's hair.",
         "fill the cistern on Saturday nights.",
@@ -69,9 +63,9 @@ _MESSAGES = {
         "massage the hamburger for three hours.",
         "bathe in milk.",
         "count the drug mo... I mean vacuum.",
-    ]
+    )
   ],
-  _RESPONSES.NO_CHORE_TRY_AGAIN: [
+  _RESPONSES.NO_CHORE_TRY_AGAIN: (
     "I've got to finish vacuuming. But you've got a sweet trick %(host)s! "
     "Hit me back later and let's see what I can finagle.",
     "I've got to finish alphabetizing my neckties. Please call back later.",
@@ -79,28 +73,28 @@ _MESSAGES = {
     "back in a few.",
     "Bees, bees, everywhere! Call the doctor! Then call me back.",
     "This horse won't shoe itself. Um. Holla' back in a few hours.",
-  ],
-  _RESPONSES.NO_PARTY: [
+  ),
+  _RESPONSES.NO_PARTY: (
     'I already said yes to %(old_host)s.',
     "Arr %(host)s, I be already swillin' the bilgewaters with me mess mates.",
-  ],
-  _RESPONSES.NO_BUSY: [
+  ),
+  _RESPONSES.NO_BUSY: (
     'Sorry, I already have plans.',
     'I must regretfully decline your invite.',
     "I'm on vacation, we'll have to try some other time.",
     'What is this "party" you speak of, %(host)s? I detest such frivolity.',
     "Voicemail for %(name)s. Leave a message and I'll get back to you when I "
     "have finished whatever important thing I'm doing. Click. Hahaha sucker.",
-  ],
-  _RESPONSES.NO_ANNOYED: [
+  ),
+  _RESPONSES.NO_ANNOYED: (
     'Yo buzz of %(host)s.',
     'Back it up a notch %(host)s.',
     'Please just peace out.',
     "No news is bad news for me, %(host)s. Still can't come.",
-  ],
-  _RESPONSES.NO_ENEMY: [
+  ),
+  _RESPONSES.NO_ENEMY: (
     'No way am I going to a party with %(enemy)s!',
-  ],
+  ),
 }
 
 
@@ -233,7 +227,10 @@ class Date:
 
   def __str__(self):
     if not self._call_history:
-      return '?'
+      #return '?'
+      return '(%s%s)' % (
+          self._name,
+          (' %d enemies' % len(self._enemies)) if self._enemies else '')
     return '%s%s' % (
         self._name,
         (' partying with %s' % self.host.GetName()) if self.host else '')
@@ -250,22 +247,22 @@ class _CustomMessageDate(Date):
 
 
 _HYSTERICAL_MESSAGES = {
-  _RESPONSES.YES : ['Yes!', 'Great.', 'OK.'],
-  _RESPONSES.YES_FRIEND : [
+  _RESPONSES.YES: ('Yes!', 'Great.', 'OK.'),
+  _RESPONSES.YES_FRIEND: (
       "Super. I'll bring %(friend)s.",
-      "Sweet. I'll bring %(friend)s."],
-  _RESPONSES.NO_CHORE : [
+      "Sweet. I'll bring %(friend)s."),
+  _RESPONSES.NO_CHORE: (
       '%(name)s is learning to twitter like a bird.',
-      'Can you believe %(name)s is hissing and fizzing like a snake?'],
-  _RESPONSES.NO_CHORE_TRY_AGAIN : [
+      'Can you believe %(name)s is hissing and fizzing like a snake?'),
+  _RESPONSES.NO_CHORE_TRY_AGAIN: (
       "I can't. Call me back.",
-      'Not now. Try tomorrow.'],
-  _RESPONSES.NO_PARTY : ['No. %(old_host)s called first.'],
-  _RESPONSES.NO_BUSY : ["I can't."],
-  _RESPONSES.NO_ANNOYED : [
+      'Not now. Try tomorrow.'),
+  _RESPONSES.NO_PARTY: ('No. %(old_host)s called first.',),
+  _RESPONSES.NO_BUSY: ("I can't.",),
+  _RESPONSES.NO_ANNOYED: (
       "I told you I can't.",
-      "%(host)s you know I can't."],
-  _RESPONSES.NO_ENEMY : ['Not with %(enemy)s.'],
+      "%(host)s you know I can't."),
+  _RESPONSES.NO_ENEMY: ('Not with %(enemy)s.',),
 }
 _HYSTERICAL_MESSAGES[_RESPONSES.YES_CALLBACK] = _HYSTERICAL_MESSAGES[
     _RESPONSES.YES]
@@ -275,13 +272,55 @@ _HYSTERICAL_MESSAGES[_RESPONSES.YES_SWITCH_FRIEND] = _HYSTERICAL_MESSAGES[
     _RESPONSES.YES_FRIEND]
 
 
+_GOOD_NEWS_MESSAGES = {
+  _RESPONSES.YES: (
+    'Congratulations you just won the sweepstakes.',
+    'A lovely idea see you without fail.',
+    'Oh kindest %(host)s. I will come.',
+    "My goodness I'll be there."),
+  _RESPONSES.YES_FRIEND: (
+    "My goodness I'll be there, %(friend)s's coming too.",
+    "My goodness I'll be there, my friend's coming too."),
+  _RESPONSES.YES_CALLBACK: (
+    "A pleasure to hear your trilling voice again so happy to tell you I'll "
+    "see you my friend.",),
+  _RESPONSES.YES_SWITCH: (
+    'Hallelujah savior snared I am no more, your invite squashed obligation '
+    'from before.',),
+  _RESPONSES.YES_SWITCH_FRIEND: (
+    'Accept my. New preference. Too shall come. %(friend)s.',),
+  _RESPONSES.NO_CHORE_TRY_AGAIN: (
+    'Whiling away hours I vacuum up frogs, if you call be back though maybe.',),
+  _RESPONSES.NO_PARTY: (
+    'Sad is my soft heart that I already said yes to someone: %(old_host)s.',),
+  _RESPONSES.NO_BUSY: (
+    'Oh kindest %(host)s. I cannot.',),
+  _RESPONSES.NO_ANNOYED: (
+    "You bring again distress to my worn out phone, it bothers me nonstop why"
+    " haven't you learned?",
+    (10 * '%(name)s ') + 'is me.',
+    11 * '%(host)s '),
+  _RESPONSES.NO_ENEMY: (
+    'Kryptonite thy name is. %(enemy)s %(enemy)s.',),
+}
+
+
+# TODO: Custom messages for the singing voices:
+#     Bad News
+#     Bells
+#     Cellos
+#     Pipe Organ
+
+
 def MakeDates(**kwargs):
   dates = []
   custom_voices = set()
   for voice_name, overrides in (
-      ('Hysterical', _HYSTERICAL_MESSAGES),):
-    dates.append(_CustomMessageDate(voice_name, overrides))
-    custom_voices.add(voice_name)
+      ('Hysterical', _HYSTERICAL_MESSAGES),
+      ('Good News', _GOOD_NEWS_MESSAGES)):
+    if voice_name in voice.VOICES_SET:
+      dates.append(_CustomMessageDate(voice_name, overrides))
+      custom_voices.add(voice_name)
   dates += [Date(v, **kwargs) for v in (voice.VOICES_SET - custom_voices)]
   random.shuffle(dates)
   return dates
