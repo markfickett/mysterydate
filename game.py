@@ -67,16 +67,19 @@ def _QueryDate(potential_dates, player):
 
 
 def PlayUntilWin(players, potential_dates):
+  time_index = 0.0
+  dt = 1.0 / len(players)  # time_index increments by 1.0 each round.
   while True:
     for player in players:
+      time_index += dt
       _PrintDateChoices(potential_dates)
       date = _QueryDate(potential_dates, player)
       logging.info('%s is calling %s...', player.GetName(), date.GetName())
       is_coming, friend = date.GetAndSayAnswer(
-          player, potential_dates, quiet=_QUIET)
-      player.Rsvp(date, is_coming)
+          player, potential_dates, time_index, quiet=_QUIET)
+      player.Rsvp(date, is_coming, time_index)
       if friend:
-        player.Rsvp(friend, True)
+        player.Rsvp(friend, True, time_index)
       _SummarizePlayerStandings(players)
       if player.GetNumDates() >= _NUM_TO_WIN:
         return player

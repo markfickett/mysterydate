@@ -104,7 +104,7 @@ _MESSAGES = {
 
 _CallRecord = collections.namedtuple(
     'CallRecord',
-    ('is_coming', 'response', 'host_name'))
+    ('is_coming', 'response', 'host_name', 'time_index'))
 
 
 class Date:
@@ -113,10 +113,14 @@ class Date:
   def __init__(self, name, call_code):
     self._name = name
     self._call_code = call_code
-    self.host = None  # accessed by Host for RSVPing
     self._call_history = []
     self._parent = voice.GetRandomVoice(exclude=self._name)
     self._enemies = set()
+
+    # accessed by Host for RSVPing
+    self.host = None
+    self.rsvp_time = None
+
     self._by_call_code[self._call_code] = self  # TODO weakref?
 
   def GetName(self):
@@ -135,7 +139,7 @@ class Date:
           [d for d in dates if d is not self],
           random.randint(2, 8)))
 
-  def GetAndSayAnswer(self, host, dates, quiet=False):
+  def GetAndSayAnswer(self, host, dates, time_index, quiet=False):
     details = {
       'name': self._name,
       'host': host.GetName(),
@@ -158,7 +162,8 @@ class Date:
       details['enemy'] = enemy.GetName()
     elif (filtered_history and
         filtered_history[-1].response == _RESPONSES.NO_CHORE_TRY_AGAIN and
-        random.random() < (0.5 if self.host else 0.9)):
+        (time_index - filtered_history[-1].time_index) < 2.0 and
+        random.random() < (0.65 if self.host else 0.99)):
       response = _RESPONSES.YES_CALLBACK
       is_coming = True
     elif (filtered_history and not filtered_history[-1].is_coming and
@@ -197,7 +202,8 @@ class Date:
 
     if friend:
       details['friend'] = friend.GetName()
-    self._call_history.append(_CallRecord(is_coming, response, host.GetName()))
+    self._call_history.append(_CallRecord(
+        is_coming, response, host.GetName(), time_index))
     self._Say(
       self._GetMessageTemplate(response) % details,
       response is _RESPONSES.NO_CHORE,
