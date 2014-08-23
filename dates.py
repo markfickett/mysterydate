@@ -1,4 +1,5 @@
 import collections
+import itertools
 import logging
 import random
 
@@ -107,15 +108,26 @@ _CallRecord = collections.namedtuple(
 
 
 class Date:
-  def __init__(self, name):
+  _by_call_code = {}
+
+  def __init__(self, name, call_code):
     self._name = name
+    self._call_code = call_code
     self.host = None  # accessed by Host for RSVPing
     self._call_history = []
     self._parent = voice.GetRandomVoice(exclude=self._name)
     self._enemies = set()
+    self._by_call_code[self._call_code] = self  # TODO weakref?
 
   def GetName(self):
     return self._name
+
+  def GetCallCode(self):
+    return self._call_code
+
+  @classmethod
+  def GetByCallCode(self, call_code):
+    return self._by_call_code.get(call_code)
 
   def AddEnemies(self, dates):
     if random.random() < 0.1:
@@ -243,8 +255,8 @@ class Date:
 
 class _CustomMessageDate(Date):
 
-  def __init__(self, voice_name, message_overrides, **kwargs):
-    Date.__init__(self, voice_name, **kwargs)
+  def __init__(self, voice_name, number, message_overrides, **kwargs):
+    Date.__init__(self, voice_name, number, **kwargs)
     self._messages = message_overrides
 
   def _GetMessageTemplate(self, response):
@@ -329,9 +341,18 @@ _BELLS_MESSAGES = {
 }
 
 
+def _GenerateCallCodes():
+  """Generates 4-digit phone numbers as strings, used to call the dates."""
+  all_permutations = list(itertools.permutations(range(10), 4))
+  random.shuffle(all_permutations)
+  for four_digits in all_permutations:
+    yield ''.join(map(str, four_digits))
+
+
 def MakeDates(**kwargs):
   dates = []
   custom_voices = set()
+  call_codes = _GenerateCallCodes()
   for voice_name, overrides in (
       # TODO: Custom messages for Bad News.
       ('Hysterical', _HYSTERICAL_MESSAGES),
@@ -340,8 +361,9 @@ def MakeDates(**kwargs):
       ('Good News', _GOOD_NEWS_MESSAGES),
       ('Bells', _BELLS_MESSAGES)):
     if voice_name in voice.VOICES_SET:
-      dates.append(_CustomMessageDate(voice_name, overrides))
+      dates.append(_CustomMessageDate(voice_name, call_codes.next(), overrides))
       custom_voices.add(voice_name)
-  dates += [Date(v, **kwargs) for v in (voice.VOICES_SET - custom_voices)]
+  dates += [Date(v, call_codes.next(), **kwargs)
+            for v in (voice.VOICES_SET - custom_voices)]
   random.shuffle(dates)
   return dates

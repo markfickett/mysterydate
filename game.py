@@ -42,8 +42,8 @@ def GetPlayers():
 
 def _PrintDateChoices(potential_dates):
   msg = "Potential dates are:\n"
-  for i, date in enumerate(potential_dates):
-    msg += '\t%d\t%s\n' % (i, date)
+  for date in potential_dates:
+    msg += '\t%s\t%s\n' % (date.GetCallCode(), date)
   logging.info(msg)
 
 
@@ -59,9 +59,10 @@ def _SummarizePlayerStandings(players):
 def _QueryDate(potential_dates, player):
   while True:
     s = raw_input("Who you gonna' call, %s? " % player.GetName())
-    try:
-      return potential_dates[int(s)]
-    except (ValueError, IndexError):
+    selected_date = dates.Date.GetByCallCode(s)
+    if selected_date:
+      return selected_date
+    else:
       logging.warning('Picking %r is not an option.', s)
 
 
