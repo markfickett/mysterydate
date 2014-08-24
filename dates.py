@@ -19,6 +19,7 @@ _RESPONSES = enum.Enum(
     'NO_PARTY',
     'NO_BUSY',
     'NO_ANNOYED',
+    'NO_POLICE',
     'NO_ENEMY',
 )
 
@@ -93,6 +94,12 @@ _MESSAGES = {
     'Please just peace out.',
     "No news is bad news for me, %(host)s. Still can't come.",
   ),
+  _RESPONSES.NO_POLICE: (
+    "I'm calling the police. This has to stop now.",
+    "It's you're own grave you're digging.",
+    'You know you have a restraining order now?',
+    'Please talk to my lawyer.',
+  ),
   _RESPONSES.NO_ENEMY: (
     'No way am I going to a party with %(enemy)s!',
   ),
@@ -129,6 +136,7 @@ def _NoopIfHasResponse(decider_fn):
 
 class Date:
   _by_call_code = {}
+  _blacklist = set()
 
   def __init__(self, name, call_code):
     self._name = name
@@ -176,6 +184,7 @@ class Date:
     logging.debug('got %d calls from you before', len(resp.filtered_history))
 
     # Run the decision-making process (which stops as soon as we've a response).
+    self._CheckPolice(resp)
     self._CheckEnemies(resp)
     special_conditions = [
         self._CheckCallBack,
@@ -205,6 +214,16 @@ class Date:
       resp.details['enemy'] = enemy.GetName()
     else:
       logging.debug('no enemies at the party (I have %d)', len(self._enemies))
+
+  @_NoopIfHasResponse
+  def _CheckPolice(self, resp):
+    if ((resp.host in self._blacklist and random.random() < 0.7)
+        or (any(record.response in (_RESPONSES.NO_ANNOYED, _RESPONSES.NO_POLICE)
+                for record in resp.filtered_history)
+            and random.random() < 0.95)):
+      resp.response = _RESPONSES.NO_POLICE
+      resp.is_coming = False
+      self._blacklist.add(resp.host)
 
   @_NoopIfHasResponse
   def _CheckCallBack(self, resp):
@@ -250,8 +269,9 @@ class Date:
         rejection_reasons = (
             _RESPONSES.NO_CHORE,
             _RESPONSES.NO_PARTY,
-            _RESPONSES.NO_ANNOYED)
-        if ((prev_call.response == _RESPONSES.NO_ANNOYED
+            _RESPONSES.NO_ANNOYED,
+            _RESPONSES.NO_POLICE)
+        if ((prev_call.response in (_RESPONSES.NO_ANNOYED, _RESPONSES.NO_POLICE)
              and random.random() < 0.9)
             or (prev_call.response in rejection_reasons
                 and random.random() < 0.5)):
@@ -379,6 +399,7 @@ _HYSTERICAL_MESSAGES = {
   _RESPONSES.NO_ANNOYED: (
       "I told you I can't.",
       "%(host)s you know I can't."),
+  _RESPONSES.NO_POLICE: ('You scare me.',),
   _RESPONSES.NO_ENEMY: ('Not with %(enemy)s.',),
 }
 _HYSTERICAL_MESSAGES[_RESPONSES.YES_CALLBACK] = _HYSTERICAL_MESSAGES[
@@ -437,6 +458,7 @@ _BELLS_MESSAGES = {
   _RESPONSES.NO_ANNOYED: (
       'La la la. La la la.',
       'Nothing gets my goat like phone calls.'),
+  _RESPONSES.NO_ANNOYED: ("Call the police it's abuse now.",),
   _RESPONSES.NO_ENEMY: ('I will catch my death from %(enemy)s.',),
 }
 
