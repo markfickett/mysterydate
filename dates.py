@@ -8,9 +8,6 @@ import enum
 import voice
 
 
-_DEBUG = False
-
-
 _RESPONSES = enum.Enum(
     'YES',
     'YES_FRIEND',
@@ -174,6 +171,9 @@ class Date:
     resp.filtered_history = [
         c for c in self._call_history
         if c.host_name == resp.host.GetName()]
+    logging.debug(
+        'call from %s at t=%.2f', resp.host.GetName(), resp.time_index)
+    logging.debug('got %d calls from you before', len(resp.filtered_history))
 
     # Run the decision-making process (which stops as soon as we've a response).
     self._CheckEnemies(resp)
@@ -203,6 +203,8 @@ class Date:
       resp.response = _RESPONSES.NO_ENEMY
       resp.is_coming = False
       resp.details['enemy'] = enemy.GetName()
+    else:
+      logging.debug('no enemies at the party (I have %d)', len(self._enemies))
 
   @_NoopIfHasResponse
   def _CheckCallBack(self, resp):
@@ -211,12 +213,12 @@ class Date:
     prev_call = resp.filtered_history[-1]
     if prev_call.response == _RESPONSES.NO_CHORE_TRY_AGAIN:
       if (resp.time_index - prev_call.time_index) < 2.0:
-        # quick call back: happy to come
+        logging.debug('asked you to call be back recently, likely to come')
         if random.random() < (0.65 if self.host else 0.99):
           resp.is_coming = True
           resp.response = _RESPONSES.YES_CALLBACK
       else:
-        # slow call back: feel miffed, unlikely to come
+        logging.debug('asked you to call be back so long ago, feel miffed')
         r = random.random()
         if r < 0.1:
           resp.is_coming = True
@@ -227,38 +229,45 @@ class Date:
 
   @_NoopIfHasResponse
   def _CheckAnnoyed(self, resp):
-    rejection_reasons = (
-        _RESPONSES.NO_CHORE,
-        _RESPONSES.NO_PARTY,
-        _RESPONSES.NO_ANNOYED)
     forget_rounds = 3.0
     for num_recent_nos, record in enumerate(self._call_history[::-1]):
-      if (record.response not in rejection_reasons or
-          (resp.time_index - record.time_index) >= forget_rounds):
+      if (record.is_coming
+          or (resp.time_index - record.time_index) >= forget_rounds):
         break
     else:
       num_recent_nos = 0
+    logging.debug('rejected %d most recent callers', num_recent_nos)
 
     if num_recent_nos >= 3:
       if random.random() < 0.9:
         resp.is_coming = False
         resp.response = _RESPONSES.NO_ANNOYED
-    elif resp.filtered_history:
+    if resp.filtered_history:
       prev_call = resp.filtered_history[-1]
+      logging.debug('you called me before')
       if (resp.time_index - prev_call.time_index) < forget_rounds:
+        logging.debug('\tand that was pretty recently')
+        rejection_reasons = (
+            _RESPONSES.NO_CHORE,
+            _RESPONSES.NO_PARTY,
+            _RESPONSES.NO_ANNOYED)
         if ((prev_call.response == _RESPONSES.NO_ANNOYED
              and random.random() < 0.9)
             or (prev_call.response in rejection_reasons
                 and random.random() < 0.5)):
           resp.is_coming = False
           resp.response = _RESPONSES.NO_ANNOYED
+      else:
+        logging.debug('\tbut it was pretty long ago')
 
   @_NoopIfHasResponse
   def _CheckAlreadyAtParty(self, resp):
     if not self.host:
       return
 
+    logging.debug('already at a party')
     if self.host.GetName() == resp.host.GetName():
+      logging.debug('already at your party, usually extra call is annoying')
       if random.random() < 0.8:
         resp.is_coming = False
         resp.response = _RESPONSES.NO_ANNOYED
@@ -271,7 +280,7 @@ class Date:
         resp.response = _RESPONSES.YES_SWITCH
       else:
         resp.response = _RESPONSES.YES_SWITCH_FRIEND
-        resp.friend = self._PickFriend(dates, resp.host.GetName())
+        resp.friend = self._PickFriend(resp.dates, resp.host.GetName())
         resp.details['friend'] = resp.friend.GetName()
     else:
       resp.response = _RESPONSES.NO_PARTY
@@ -279,6 +288,7 @@ class Date:
 
   @_NoopIfHasResponse
   def _DecideAmongEntryConditions(self, resp):
+    logging.debug('no special conditions, just deciding whether to come')
     if random.random() < 0.6:
       resp.is_coming = False
       resp.response = random.choice((
@@ -289,7 +299,7 @@ class Date:
       resp.is_coming = True
       if random.random() < 0.2:
         resp.response = _RESPONSES.YES_FRIEND
-        resp.friend = self._PickFriend(dates, host.GetName())
+        resp.friend = self._PickFriend(resp.dates, resp.host.GetName())
         resp.details['friend'] = resp.friend.GetName()
       else:
         resp.response = _RESPONSES.YES
@@ -325,14 +335,14 @@ class Date:
 
   def _Say(self, msg, as_parent, quiet):
     speaker = self._parent if as_parent else self._name
-    if quiet:
-      logging.info('%s: %s', speaker, msg)
-    else:
+    logging.log(
+        logging.INFO if quiet else logging.DEBUG, '%s: %s', speaker, msg)
+    if not quiet:
       voice.Say(msg, voice=speaker)
 
   def __str__(self):
     if not self._call_history:
-      if _DEBUG:
+      if logging.getLogger().level <= logging.DEBUG:
         return '(%s%s)' % (
             self._name,
             (' %d enemies' % len(self._enemies)) if self._enemies else '')
