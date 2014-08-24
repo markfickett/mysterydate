@@ -107,6 +107,29 @@ _CallRecord = collections.namedtuple(
     ('is_coming', 'response', 'host_name', 'time_index'))
 
 
+class _InvitationAndResponse:
+  def __init__(self, host, dates, time_index, quiet):
+    self.host = host
+    self.dates = dates
+    self.time_index = time_index
+    self.filtered_history = []
+
+    self.quiet = quiet
+
+    self.is_coming = None
+    self.response = None
+    self.details = {}
+    self.friend = None
+
+
+def _NoopIfHasResponse(decider_fn):
+  def NoopIfHasResponse(self, invitation_and_response):
+    return (
+        invitation_and_response if invitation_and_response.response
+        else decider_fn(self, invitation_and_response))
+  return NoopIfHasResponse
+
+
 class Date:
   _by_call_code = {}
 
@@ -140,75 +163,136 @@ class Date:
           random.randint(2, 8)))
 
   def GetAndSayAnswer(self, host, dates, time_index, quiet=False):
-    details = {
+    # Copy all incoming details to an _InvitationAndResponse.
+    resp = _InvitationAndResponse(host, dates, time_index, quiet)
+    resp.details.update({
       'name': self._name,
       'host': host.GetName(),
-    }
+    })
     if self.host:
-      details['old_host'] = self.host.GetName()
-    filtered_history = [
+      resp.details['old_host'] = self.host.GetName()
+    resp.filtered_history = [
         c for c in self._call_history
-        if c.host_name == host.GetName()]
+        if c.host_name == resp.host.GetName()]
 
-    response = None
-    friend = None
-    is_coming = False
-    enemies = host.CheckDates(self._enemies)
-    enemy = random.choice(list(enemies)) if enemies else None
+    # Run the decision-making process (which stops as soon as we've a response).
+    self._CheckEnemies(resp)
+    special_conditions = [
+        self._CheckCallBack,
+        self._CheckAnnoyed,
+        self._CheckAlreadyAtParty]
+    random.shuffle(special_conditions)
+    for special_check_fn in special_conditions:
+      special_check_fn(resp)
+    self._DecideAmongEntryConditions(resp)
 
-    if enemy:
-      response = _RESPONSES.NO_ENEMY
-      is_coming = False
-      details['enemy'] = enemy.GetName()
-    elif (filtered_history and
-        filtered_history[-1].response == _RESPONSES.NO_CHORE_TRY_AGAIN and
-        (time_index - filtered_history[-1].time_index) < 2.0 and
-        random.random() < (0.65 if self.host else 0.99)):
-      response = _RESPONSES.YES_CALLBACK
-      is_coming = True
-    elif (filtered_history and not filtered_history[-1].is_coming and
-          random.random() < 0.8):
-      response = _RESPONSES.NO_ANNOYED
-      is_coming = False
-    elif random.random() < 0.6:
-      excuses = [_RESPONSES.NO_BUSY]
-      if not self.host:
-        excuses += [_RESPONSES.NO_CHORE, _RESPONSES.NO_CHORE_TRY_AGAIN]
-      response = random.choice(excuses)
-      is_coming = False
-    elif self.host:
-      if self.host.GetName() == host.GetName():
-        response = _RESPONSES.NO_ANNOYED
-        is_coming = False
-      if random.random() < 0.3:
-        if random.getrandbits(1) == 0:
-          response = _RESPONSES.YES_SWITCH
-          is_coming = True
-        else:
-          response = _RESPONSES.YES_SWITCH_FRIEND
-          is_coming = True
-          friend = self._PickFriend(dates, host.GetName())
-      else:
-        response = _RESPONSES.NO_PARTY
-        is_coming = False
-    else:
-      if random.random() < 0.2:
-        response = _RESPONSES.YES_FRIEND
-        is_coming = True
-        friend = self._PickFriend(dates, host.GetName())
-      else:
-        response = _RESPONSES.YES
-        is_coming = True
-
-    if friend:
-      details['friend'] = friend.GetName()
+    # Record the response, say it, and return the external details.
     self._call_history.append(_CallRecord(
-        is_coming, response, host.GetName(), time_index))
+        resp.is_coming, resp.response, resp.host.GetName(), resp.time_index))
     self._Say(
-      self._GetMessageTemplate(response) % details,
-      response is _RESPONSES.NO_CHORE,
-      quiet)
-    return is_coming, friend
+      self._GetMessageTemplate(resp.response) % resp.details,
+      resp.response is _RESPONSES.NO_CHORE,
+      resp.quiet)
+    return resp.is_coming, resp.friend
+
+  @_NoopIfHasResponse
+  def _CheckEnemies(self, resp):
+    enemies = resp.host.CheckDates(self._enemies)
+    enemy = random.choice(list(enemies)) if enemies else None
+    if enemy:
+      resp.response = _RESPONSES.NO_ENEMY
+      resp.is_coming = False
+      resp.details['enemy'] = enemy.GetName()
+
+  @_NoopIfHasResponse
+  def _CheckCallBack(self, resp):
+    if not resp.filtered_history:
+      return
+    prev_call = resp.filtered_history[-1]
+    if prev_call.response == _RESPONSES.NO_CHORE_TRY_AGAIN:
+      if (resp.time_index - prev_call.time_index) < 2.0:
+        # quick call back: happy to come
+        if random.random() < (0.65 if self.host else 0.99):
+          resp.is_coming = True
+          resp.response = _RESPONSES.YES_CALLBACK
+      else:
+        # slow call back: feel miffed, unlikely to come
+        r = random.random()
+        if r < 0.1:
+          resp.is_coming = True
+          resp.response = _RESPONSES.YES_CALLBACK
+        elif r < 0.9:
+          resp.is_coming = False
+          resp.response = _RESPONSES.NO_ANNOYED
+
+  @_NoopIfHasResponse
+  def _CheckAnnoyed(self, resp):
+    rejection_reasons = (
+        _RESPONSES.NO_CHORE,
+        _RESPONSES.NO_PARTY,
+        _RESPONSES.NO_ANNOYED)
+    forget_rounds = 3.0
+    for num_recent_nos, record in enumerate(self._call_history[::-1]):
+      if (record.response not in rejection_reasons or
+          (resp.time_index - record.time_index) >= forget_rounds):
+        break
+    else:
+      num_recent_nos = 0
+
+    if num_recent_nos >= 3:
+      if random.random() < 0.9:
+        resp.is_coming = False
+        resp.response = _RESPONSES.NO_ANNOYED
+    elif resp.filtered_history:
+      prev_call = resp.filtered_history[-1]
+      if (resp.time_index - prev_call.time_index) < forget_rounds:
+        if ((prev_call.response == _RESPONSES.NO_ANNOYED
+             and random.random() < 0.9)
+            or (prev_call.response in rejection_reasons
+                and random.random() < 0.5)):
+          resp.is_coming = False
+          resp.response = _RESPONSES.NO_ANNOYED
+
+  @_NoopIfHasResponse
+  def _CheckAlreadyAtParty(self, resp):
+    if not self.host:
+      return
+
+    if self.host.GetName() == resp.host.GetName():
+      if random.random() < 0.8:
+        resp.is_coming = False
+        resp.response = _RESPONSES.NO_ANNOYED
+      else:
+        resp.is_coming = True
+        resp.response = _RESPONSES.YES
+    elif random.random() < 0.3:
+      resp.is_coming = True
+      if random.getrandbits(1) == 0:
+        resp.response = _RESPONSES.YES_SWITCH
+      else:
+        resp.response = _RESPONSES.YES_SWITCH_FRIEND
+        resp.friend = self._PickFriend(dates, resp.host.GetName())
+        resp.details['friend'] = resp.friend.GetName()
+    else:
+      resp.response = _RESPONSES.NO_PARTY
+      resp.is_coming = False
+
+  @_NoopIfHasResponse
+  def _DecideAmongEntryConditions(self, resp):
+    if random.random() < 0.6:
+      resp.is_coming = False
+      resp.response = random.choice((
+          _RESPONSES.NO_BUSY,
+          _RESPONSES.NO_CHORE,
+          _RESPONSES.NO_CHORE_TRY_AGAIN))
+    else:
+      resp.is_coming = True
+      if random.random() < 0.2:
+        resp.response = _RESPONSES.YES_FRIEND
+        resp.friend = self._PickFriend(dates, host.GetName())
+        resp.details['friend'] = resp.friend.GetName()
+      else:
+        resp.response = _RESPONSES.YES
 
   def _GetMessageTemplate(self, response):
     return random.choice(_MESSAGES[response])
